@@ -1,6 +1,6 @@
 # Docker Registry Purger
 
-This is a small script used for purging a private Docker registry's old tags. It fetches the list of tags for an image, keeps `latest` and the most recent `NOF_TAGS_TO_KEEP` and deletes all other tags.
+This is a small tool used for purging a private Docker registry's old tags. It fetches the list of tags for an image, keeps `latest` and the most recent `NOF_TAGS_TO_KEEP` tags and deletes all other tags.
 
 To actually reclaim the space, you'd need to also run the registry's [garbage collection](https://docs.docker.com/registry/garbage-collection/#run-garbage-collection).
 
@@ -33,4 +33,6 @@ Set the following environment variables and run the docker image, e.g as a cron 
 
 ## Usage
 
-`docker run -it --rm -e REGISTRY_URL=https://registry.example.com -e NOF_TAGS_TO_KEEP=3 devture/docker-registry-purger:latest
+1. `docker run -it --rm -e REGISTRY_URL=https://registry.example.com -e NOF_TAGS_TO_KEEP=3 devture/docker-registry-purger:latest`
+
+2. Run the registry's [garbage collection](https://docs.docker.com/registry/garbage-collection/#run-garbage-collection) now to actually reclaim the space.

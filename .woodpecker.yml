@@ -45,7 +45,7 @@ pipeline:
   push-for-branch:
     when:
       branch:
-        include: [master]
+        include: [main]
     image: *docker_with_buildx_container_image
     environment:
       - DOCKER_HOST=tcp://docker:2375
@@ -59,7 +59,7 @@ pipeline:
       - |
         container_image_tag_to_publish=$CI_BRANCH
 
-        if [ "$CI_BRANCH" == "master" ]; then
+        if [ "$CI_BRANCH" == "main" ]; then
           container_image_tag_to_publish=latest
         fi
 

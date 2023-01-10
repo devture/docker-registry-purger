@@ -1,4 +1,4 @@
-FROM python:3.9-slim-bullseye
+FROM docker.io/python:3.11-slim-bullseye
 
 RUN pip install requests
 

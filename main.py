@@ -1,25 +1,23 @@
 import json
 import os
-import logging
 import requests
 import sys
-
-from requests.auth import HTTPBasicAuth
-
-log = logging.getLogger(__name__)
+import re
 
 registry_url = os.getenv("REGISTRY_URL")
-nof_tags_to_keep = int(os.getenv("NOF_TAGS_TO_KEEP", 3))
-username = os.getenv("DOCKER_USERNAME")
-password = os.getenv("DOCKER_PASSWORD")
-
 if not registry_url:
-    log.error("Registry URL not found. Please set REGISTRY_URL env variable.")
-    sys.exit()
+    print("REGISTRY_URL is required")
+    sys.exit(1)
 
-auth = HTTPBasicAuth(username, password) if (username and password) else None
+nof_tags_to_keep = int(os.getenv("NOF_TAGS_TO_KEEP", 3))
+image_ignore_regex_str = os.getenv("IMAGE_IGNORE_REGEX")
+image_ignore_regex = (None if image_ignore_regex_str is None else re.compile(image_ignore_regex_str))
+dry_run = os.getenv("DRY_RUN") is not None and os.getenv("DRY_RUN") not in ["0", "false", "False", "FALSE"]
 
-result = requests.get(f"{registry_url}/v2/_catalog", auth=auth)
+if dry_run:
+    print("Working in dry-run mode..")
+
+result = requests.get(f"{registry_url}/v2/_catalog")
 if result.status_code != 200:
     log.error("Could not fetch registry catalog. Please check parameters")
     sys.exit()
@@ -27,25 +25,51 @@ catalog = result.json()["repositories"]
 
 stats = {image: 0 for image in catalog}
 for image in catalog:
-    result = requests.get(f"{registry_url}/v2/{image}/tags/list", auth=auth)
+    if image_ignore_regex is not None:
+        if image_ignore_regex.search(image) is not None:
+            print("Skip {0} because it matches the ignore regex".format(image))
+            continue
+
+    print("Processing {0}..".format(image))
+
+    result = requests.get(f"{registry_url}/v2/{image}/tags/list")
     tags = result.json()["tags"]
+
+    if tags is None:
+        log.info("Skip {0} due to no tags".format(image))
+        continue
+
+    tags = list(filter(lambda t: t != 'latest', tags))
 
     tags_to_delete = tags[:-nof_tags_to_keep]
 
+    print("Tags to delete: ", tags_to_delete)
+
     for tag in tags_to_delete:
+        print("{0}:{1} is a candidate for deletion".format(image, tag))
+
+        if dry_run:
+            continue
+
+        print("Deleting {0}:{1}..".format(image, tag))
+
         manifests_url = f"{registry_url}/v2/{image}/manifests"
         headers = {"Accept": "application/vnd.docker.distribution.manifest.v2+json"}
-        result = requests.get(f"{manifests_url}/{tag}", auth=auth, headers=headers)
-        if "Docker-Content-Digest" in result.headers:
-            sha = result.headers["Docker-Content-Digest"]
-            delete_result = requests.delete(f"{manifests_url}/{sha}", auth=auth)
-            if delete_result.status_code == 202:
-                stats[image] += 1
-            else:
-                log.error(f"Could not delete tag {tag} for image {image}")
 
-        else:
-            log.warning(f"Could not find digest sha for image tag {image}:{tag}")
+        result = requests.get(f"{manifests_url}/{tag}", headers=headers)
 
-print("Image cleanup completed. Number of tags deleted:")
-print(json.dumps(stats, indent=4))
+        if "Docker-Content-Digest" not in result.headers:
+            print(f"Could not find digest sha for {image}:{tag}")
+            continue
+
+        sha = result.headers["Docker-Content-Digest"]
+        delete_result = requests.delete(f"{manifests_url}/{sha}")
+        if delete_result.status_code != 202:
+            print(f"Could not delete {image}:{tag}")
+            continue
+
+        stats[image] += 1
+
+if not dry_run:
+    print("Image cleanup completed. Number of tags actually deleted:")
+    print(json.dumps(stats, indent=4))

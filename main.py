@@ -19,8 +19,8 @@ if dry_run:
 
 result = requests.get(f"{registry_url}/v2/_catalog")
 if result.status_code != 200:
-    log.error("Could not fetch registry catalog. Please check parameters")
-    sys.exit()
+    print("Could not fetch registry catalog. Please check parameters")
+    sys.exit(2)
 catalog = result.json()["repositories"]
 
 stats = {image: 0 for image in catalog}
@@ -36,7 +36,7 @@ for image in catalog:
     tags = result.json()["tags"]
 
     if tags is None:
-        log.info("Skip {0} due to no tags".format(image))
+        print("Skip {0} due to no tags".format(image))
         continue
 
     tags = list(filter(lambda t: t != 'latest', tags))

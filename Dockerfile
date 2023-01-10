@@ -1,4 +1,6 @@
-FROM docker.io/python:3.11-slim-bullseye
+FROM docker.io/alpine:3.17.0
+
+RUN apk add --no-cache python3 py3-pip
 
 RUN pip install requests
 

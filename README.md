@@ -1,5 +1,7 @@
 # Docker Registry Purger
 
+[![Docker Pulls](https://img.shields.io/docker/pulls/devture/docker-registry-purger.svg)](https://hub.docker.com/r/devture/docker-registry-purger/)
+
 This is a small tool used for purging a private Docker registry's old tags. It fetches the list of tags for an image, keeps `latest` and the most recent `NOF_TAGS_TO_KEEP` tags and deletes all other tags.
 
 To actually reclaim the space, you'd need to also run the registry's [garbage collection](https://docs.docker.com/registry/garbage-collection/#run-garbage-collection).

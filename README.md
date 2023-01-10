@@ -29,7 +29,7 @@ Set the following environment variables and run the docker image, e.g as a cron 
 |:--------------------|:-------------------------------------------------------------------|:-----------------|
 |REGISTRY_URL         |Base URL of the registry, with protocol (e.g. https://)             | (undefined)      |
 |NOF_TAGS_TO_KEEP     |Number of most recent tags to keep. `latest` is always kept.        | 3                |
-|IMAGE_IGNORE_REGEX   |A regex for skipping processing of images (e.g. `postgres|alpine`)  | (undefined)      |
+|IMAGE_IGNORE_REGEX   |A regex for skipping processing of images (e.g. `postgres\|alpine`) | (undefined)      |
 |DRY_RUN              |If set, performs a dry-run and does not delete anything             | (undefined)      |
 
 
